@@ -7,7 +7,7 @@ import requests
 import time
 
 class ArticleNode:
-    depth = 0
+    depth = ''
     name = ''
     id=''
     url = ''
@@ -22,10 +22,7 @@ class ArticleNode:
         self.name = name
 
     def toString(self):
-        return "depth: " + str(self.depth) + "\nname: " + self.name + "\nid: " + self.id + "\nurl: " + self.url + "\n" + self.articleMD
-
-    def parse(self):
-        pass
+        return "depth: " + self.depth + "\nname: " + self.name + "\nid: " + self.id + "\nurl: " + self.url + "\n" 
 
 rootPage = 'https://www.liaoxuefeng.com/wiki/1016959663602400'
     
@@ -58,19 +55,23 @@ def getNode(contentSoup):
     node = ArticleNode()
     node.depth = contentSoup['depth']
     node.id = contentSoup['id']
-    node.name = contentSoup.find('a', class_='x-wiki-index-item').text
+    node.name = contentSoup.find('a', class_='x-wiki-index-item').text.replace('/', ' ')
     node.url = 'https://www.liaoxuefeng.com' + contentSoup.find('a', class_='x-wiki-index-item')['href']
     
+    print(node.toString())
+
     content = getUrlContent(node.url)
     if content != None:
         soup = BeautifulSoup(content, 'lxml')
         node.articleHTML = str(soup.find('div', class_="x-wiki-content x-main-content"))
         node.articleMD = tomd.convert(node.articleHTML)
-    
+        with open ('output/'+node.name+'.md', 'w', encoding='utf-8') as fs:
+            fs.write(node.articleMD)
+            fs.flush()
+
     for item in contentSoup.find_all('div', depth=str(int(node.depth)+1)):
         node.children.append(getNode(item))
-            
-    print(node.toString())
+
     return node
     
 getIndex(rootPage)
